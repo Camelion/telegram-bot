@@ -1,0 +1,5 @@
+telegram:
+  bots:
+    - name: su_bbot
+      token: ${su_bbotToken}
+      handlerBean: subbotHandler

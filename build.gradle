@@ -1,0 +1,58 @@
+buildscript {
+	ext {
+		springBootVersion = '1.5.2.RELEASE'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+
+jar {
+	baseName = 'telegram-bot'
+	version = '0.0.1-SNAPSHOT'
+}
+
+sourceCompatibility = 1.8
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	compile('org.springframework.boot:spring-boot-starter-actuator')
+//	compile('org.springframework.boot:spring-boot-starter-cache')
+//	compile('org.springframework.boot:spring-boot-starter-data-jpa')
+//	compile('org.liquibase:liquibase-core')
+//	compile('org.springframework.boot:spring-boot-starter-mail')
+//	compile('org.springframework.retry:spring-retry')
+//	compile('org.springframework.boot:spring-boot-starter-thymeleaf')
+	compile('org.springframework.boot:spring-boot-starter-web')
+	compile('org.springframework.boot:spring-boot-starter-integration')
+	compile('org.springframework.integration:spring-integration-http')
+
+	compile group: 'org.telegram', name: 'telegrambots-meta', version: '2.4.4.5'
+	compile('io.projectreactor:reactor-core')
+
+	compileOnly('org.springframework.boot:spring-boot-configuration-processor')
+
+	runtime('org.springframework.boot:spring-boot-devtools')
+//	runtime('org.postgresql:postgresql')
+}
+
+dependencies {
+	testCompile('org.springframework.boot:spring-boot-starter-test')
+	testRuntime('com.h2database:h2')
+}
+
+dependencyManagement {
+	imports {
+		mavenBom("io.projectreactor:reactor-bom:Aluminium-SR1")
+	}
+}
