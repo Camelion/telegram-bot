@@ -64,10 +64,7 @@ public class TelegramBotSession implements BotSession {
                     .setOffset(lastUpdateId + 1);
 
             String url = ApiConstants.BASE_URL + token + "/" + GetUpdates.PATH;
-            String response = botOptions.getRestTemplate().postForObject(
-                    url,
-                    request,
-                    String.class);
+            String response = botOptions.getRestTemplate().postForObject(url, request, String.class);
             try {
                 return request.deserializeResponse(response);
             } catch (TelegramApiRequestException e) {

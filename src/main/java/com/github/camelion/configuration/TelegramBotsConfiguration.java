@@ -27,15 +27,16 @@ public class TelegramBotsConfiguration {
     public static class BotConfiguration {
         String name;
         String token;
-        String handlerBean;
 
-        public String getHandlerBean() {
-            return handlerBean;
+        public String getBotCommandHandler() {
+            return botCommandHandler;
         }
 
-        public void setHandlerBean(String handlerBean) {
-            this.handlerBean = handlerBean;
+        public void setBotCommandHandler(String botCommandHandler) {
+            this.botCommandHandler = botCommandHandler;
         }
+
+        String botCommandHandler;
 
         public String getName() {
             return name;

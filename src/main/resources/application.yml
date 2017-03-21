@@ -1,5 +1,9 @@
 telegram:
   bots:
-    - name: su_bbot
-      token: ${su_bbotToken}
-      handlerBean: subbotHandler
+#    - name: su_bbot
+#      token: ${su_bbotToken}
+#      handlerBean: subbotHandler
+#
+    - name: ymqabot
+      token: ${ymqaToken}
+      botCommandHandler: ymqaBotCommandHandler

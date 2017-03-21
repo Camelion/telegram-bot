@@ -2,7 +2,7 @@ package com.github.camelion.application;
 
 import com.github.camelion.configuration.TelegramBotsConfiguration;
 import com.github.camelion.configuration.TelegramBotsConfiguration.BotConfiguration;
-import com.github.camelion.handlers.CommandHandler;
+import com.github.camelion.handlers.BotCommandHandler;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -44,7 +44,7 @@ class ApplicationEventListener implements ApplicationListener<ContextRefreshedEv
         for (BotConfiguration botConfiguration : botsConfiguration.getBots()) {
             AbsSender absSender = context.getBean(TelegramAbsSender.class, botConfiguration.getToken());
 
-            CommandHandler commandHandler = context.getBean(botConfiguration.getHandlerBean(), CommandHandler.class);
+            BotCommandHandler commandHandler = context.getBean(botConfiguration.getBotCommandHandler(), BotCommandHandler.class);
             commandHandler.setAbsSender(absSender);
 
             LongPollingBot bot = context.getBean(TelegramLongPollingBot.class,
