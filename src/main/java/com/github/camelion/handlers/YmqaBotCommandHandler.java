@@ -1,17 +1,22 @@
 package com.github.camelion.handlers;
 
-import com.github.camelion.command.ChatCommandHandler;
-import com.github.camelion.command.WhoCommandHandler;
+import com.github.camelion.model.ChatMessage;
+import com.github.camelion.repository.ElasticEnvironmentRepository;
+import org.elasticsearch.action.percolate.PercolateResponse;
+import org.elasticsearch.common.text.Text;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
+import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
-import org.telegram.telegrambots.api.objects.MessageEntity;
 import org.telegram.telegrambots.bots.AbsSender;
+import org.telegram.telegrambots.exceptions.TelegramApiException;
 import reactor.core.publisher.Flux;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,13 +31,17 @@ public class YmqaBotCommandHandler implements BotCommandHandler {
 
     private final Logger logger;
     private final ApplicationContext context;
+    private final ElasticsearchTemplate elasticsearchTemplate;
+    private final ElasticEnvironmentRepository environmentRepository;
 
     private AbsSender absSender;
 
     @Autowired
-    public YmqaBotCommandHandler(Logger logger, ApplicationContext context) {
+    public YmqaBotCommandHandler(Logger logger, ApplicationContext context, ElasticsearchTemplate elasticsearchTemplate, ElasticEnvironmentRepository environmentRepository) {
         this.logger = logger;
         this.context = context;
+        this.elasticsearchTemplate = elasticsearchTemplate;
+        this.environmentRepository = environmentRepository;
     }
 
     public void setAbsSender(AbsSender absSender) {
@@ -42,26 +51,93 @@ public class YmqaBotCommandHandler implements BotCommandHandler {
     @Override
     public void accept(Message incomingMessage) {
         // process chat commands
-        Flux.fromIterable(incomingMessage.getEntities())
-                .groupBy(MessageEntity::getText)
-                .filter(gf -> ALLOWED_COMMANDS.contains(gf.key()))
-                .subscribe(flux -> processChatCommands(flux.key(), flux, incomingMessage));
+        Flux.just(incomingMessage.getText())
+                .subscribe(text -> {
+                    try {
+                        processText(text, incomingMessage);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
     }
 
-    private void processChatCommands(String key, Flux<MessageEntity> messageEntities, Message message) {
-        ChatCommandHandler chatCommandHandler;
+    private void processText(String text, Message message) throws IOException {
 
-        switch (key) {
-            case "/who":
-                chatCommandHandler = context.getBean(WhoCommandHandler.class);
-                break;
-            default:
-                logger.debug("There are no ChatCommandHandler for command [{}]", key);
-                return;
+        elasticsearchTemplate.putMapping(ChatMessage.class);
+//        elasticsearchTemplate.deleteIndex(ChatMessage.class);
+        elasticsearchTemplate.createIndex(ChatMessage.class);
+
+        elasticsearchTemplate.getClient()
+                .prepareIndex("messages", ".percolator", "Диван")
+                .setSource("{ query: { match: { text: \"диван\"}}}")
+                .setRefresh(true) // Needed when the query shall be available immediately
+                .execute().actionGet();
+
+        elasticsearchTemplate.getClient()
+                .prepareIndex("messages", ".percolator", "Овощ")
+                .setSource("{ query: { match: { text: \"овощ\"}}}")
+                .setRefresh(true) // Needed when the query shall be available immediately
+                .execute().actionGet();
+
+        elasticsearchTemplate.getClient()
+                .prepareIndex("messages", ".percolator", "Среда")
+                .setSource("{ query: { match_phrase: { text: \"среда 1\"}}}")
+                .setRefresh(true) // Needed when the query shall be available immediately
+                .execute().actionGet();
+
+        elasticsearchTemplate.getClient()
+                .prepareIndex("messages", ".percolator", "Пятница")
+                .setSource("{ query: { match: { text: \"пятница\"}}}")
+                .setRefresh(true) // Needed when the query shall be available immediately
+                .execute().actionGet();
+
+
+        elasticsearchTemplate.getClient()
+                .prepareIndex("messages", ".percolator", "Ticket")
+                .setSource("{ query: { match_phrase: { text: \"сделайте тикет\"}}}")
+                .setRefresh(true) // Needed when the query shall be available immediately
+                .execute().actionGet();
+
+        PercolateResponse response = elasticsearchTemplate.getClient().preparePercolate()
+//                .setIndices("message")
+                .setDocumentType("chatMessage")
+                .setSource("{ doc: { text: \"" + text + "\"}}").execute().actionGet();
+
+        System.out.println("start search for text: ");
+
+
+        String outText = Arrays.stream(response.getMatches())
+                .map(PercolateResponse.Match::getId).map(Text::string)
+                .reduce((a, b) -> a + " и " + b).get();
+
+
+        boolean ticket = false;
+        for (PercolateResponse.Match match : response) {
+            if (match.getId().string().equals("Ticket"))
+                ticket = true;
+            System.out.println("match:" + match);
         }
 
-        Assert.notNull(chatCommandHandler, "ChatCommandHandler should be defined for command [" + key + "]");
+        System.out.println("done search for text: ");
+        String componentText = "Нууу " + outText + " выглядит не очень, пойду посмотрю что там";
 
-        chatCommandHandler.handleChatCommand(message, messageEntities, absSender);
+        String ticketText = null;
+
+
+        if (ticket)
+            ticketText = "Окей, я создал http://localhost:8080/ticket";
+
+        try {
+            SendMessage replyMessage = new SendMessage();
+            replyMessage.setChatId(message.getChatId());
+            if(ticket) {
+                replyMessage.setReplyToMessageId(message.getMessageId());
+            }
+            replyMessage.setText(ticket ? ticketText : componentText);
+
+            absSender.sendMessage(replyMessage);
+        } catch (TelegramApiException e) {
+            ReflectionUtils.rethrowRuntimeException(e);
+        }
     }
 }

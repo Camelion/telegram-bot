@@ -1,20 +1,20 @@
 package com.github.camelion.application;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.telegram.telegrambots.generics.BotOptions;
 
-import static org.springframework.beans.factory.config.BeanDefinition.SCOPE_PROTOTYPE;
+import java.io.Serializable;
 
 /**
  * @author Camelion
  * @since 10.03.17
  */
 @Component
-@Scope(SCOPE_PROTOTYPE)
-class TelegramBotOptions implements BotOptions {
+class TelegramBotOptions implements BotOptions, Serializable {
+
+    private static final long serialVersionUID = 704676633273243633L;
     private final RestTemplate restTemplate;
 
     @Autowired

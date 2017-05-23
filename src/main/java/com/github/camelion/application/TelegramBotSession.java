@@ -36,9 +36,8 @@ public class TelegramBotSession implements BotSession {
 
     @Override
     public void setOptions(BotOptions options) {
-        Assert.isInstanceOf(TelegramBotOptions.class, options);
-
-        this.botOptions = (TelegramBotOptions) options;
+//        Assert.isInstanceOf(TelegramBotOptions.class, options);
+            this.botOptions = TelegramBotOptions.class.cast(options);
     }
 
     @Override

@@ -19,7 +19,6 @@ import reactor.core.scheduler.Schedulers;
 import java.util.function.Consumer;
 
 import static org.springframework.beans.factory.config.BeanDefinition.SCOPE_PROTOTYPE;
-import static org.telegram.telegrambots.api.objects.EntityType.BOTCOMMAND;
 
 /**
  * @author Camelion
@@ -52,14 +51,21 @@ final class TelegramLongPollingBot implements LongPollingBot, Consumer<Update>,
     }
 
     @Override
+    public void accept(Update update) {
+        if (!update.hasMessage()) {
+            logger.trace("Ignored update without messages, {}", update);
+            return;
+        }
+
+        this.onUpdateReceived(update);
+    }
+
+    @Override
     public void onUpdateReceived(Update update) {
         Message message = update.getMessage();
 
         // process message with entities
         Flux.just(message)
-                .filter(Message::hasEntities)
-                .filter(msg -> msg.getEntities().stream()
-                        .anyMatch(me -> me.getType().equals(BOTCOMMAND)))
                 .subscribeOn(BOTCOMMAND_SCHEDULER)
                 .subscribe(botCommandHandler);
     }
@@ -82,16 +88,6 @@ final class TelegramLongPollingBot implements LongPollingBot, Consumer<Update>,
     @Override
     public void clearWebhook() throws TelegramApiRequestException {
         /* no-op */
-    }
-
-    @Override
-    public void accept(Update update) {
-        if (!update.hasMessage()) {
-            logger.trace("Ignored update without messages, {}", update);
-            return;
-        }
-
-        this.onUpdateReceived(update);
     }
 
     @Override

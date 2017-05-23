@@ -1,9 +1,9 @@
 telegram:
   bots:
-#    - name: su_bbot
-#      token: ${su_bbotToken}
-#      handlerBean: subbotHandler
-#
-    - name: ymqabot
-      token: ${ymqaToken}
+    - name: su_bbot
+      token: ${su_bbotToken}
       botCommandHandler: ymqaBotCommandHandler
+spring:
+  data:
+    elasticsearch:
+      cluster-nodes: localhost:9300
